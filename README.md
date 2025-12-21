@@ -8,7 +8,7 @@ Projekt obuhvaća dizajn virtualne mreže s nadzornim čvorom (Security Onion), 
 
 ## Struktura repozitorija
 
--   `docs/` – pdf dokumentacija i literatura
+-   `docs/` – projektna dokumentacija
 -   `implementation/` – konfiguracije i setup koraci
 -   `results/` – screenshotovi i sažetak rezultata
 -   `presentation/` – prezentacije teorijskog i praktičnog dijela projekta
