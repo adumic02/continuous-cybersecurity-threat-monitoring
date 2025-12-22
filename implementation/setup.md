@@ -638,3 +638,404 @@ sudo ./attack_traffic.sh
 Sada će se sav napadački promet generirati odjednom, bez potrebe da se ručno unose naredbe.
 
 Za dodatno objašnjenje naredbi preporučeno je pročitati dokumentaciju u kojoj se nalaze slike iz terminala i rezultat kako Security Onion detektira svaku naredbu kojom se generira promet.
+
+## 6. Izrada i korištenje sigurnosnih dashboarda
+
+Kako bi se omogućio  pregled sigurnosnog stanja sustava, unutar **Elastic (Kibana)** alata izrađeni su prilagodljivi **dashboardi**. Dashboardi služe za vizualizaciju sigurnosnih događaja, mrežnog prometa i detektiranih prijetnji na temelju prikupljenih logova i generiranih alerta.
+
+Dashboardi omogućuju analizu stanja sustava, uočavanje anomalija te lakše donošenje odluka tijekom sigurnosnog nadzora.
+
+U sklopu ovog rada kreirana su dva dashboarda:
+- **Security Overview**
+- **Network Scanning & Attack Analysis**
+
+
+## 6.1. Postupak izrade dashboarda u Kibani
+1. U web sučelju Kibane potrebno je otvoriti izbornik **Dashboard**.
+2. Odabire se opcija **Create dashboard**, čime se otvara prazan dashboard.
+3. Na praznom dashboardu odabire se **Create visualization / Add panel** kako bi se započelo s dodavanjem prve vizualizacije.
+
+
+4. Nakon odabira opcije **Create visualization**, otvara se vizualni editor (najčešće **Lens**).
+5. U gornjem dijelu sučelja odabire se **data view (index pattern)** iz kojeg će se koristiti podaci (npr. Suricata alerti, Elastic Security alerti).
+6. Zatim se odabire **vrsta vizualizacije**, ovisno o vrsti podataka i načinu prikaza:
+   - line chart (vremenski trendovi)
+   - bar chart (usporedba vrijednosti)
+   - pie chart (distribucija podataka)
+   - metric (jedna agregirana vrijednost)
+
+
+7. Na **desnoj strani sučelja** nalazi se konfiguracijski panel koji sadrži:
+   - **Fields** – popis svih dostupnih polja iz odabranog data viewa
+   - **Metric** – definira što se mjeri (numerička vrijednost)
+   - **Slice / Dimensions** – definira kako se podaci dijele ili grupiraju
+
+8. U **Metric** dijelu definira se numerička vrijednost koja će se prikazivati na grafu.
+9. Odabire se funkcija mjerenja, primjerice:
+   - `Count` – broj zapisa (najčešće korišteno)
+   - `Sum`, `Average`, `Minimum`, `Maximum`
+   - `Unique count`, `Percentile`
+10. Po potrebi se odabire **Field** nad kojim se funkcija primjenjuje.
+
+Primjer:
+- Metric: `Count`  
+→ prikazuje ukupan broj događaja
+
+11. U **Slice / Dimensions** dijelu definiraju se kategorije ili vremenska podjela podataka.
+12. Moguće je odabrati:
+   - **Date histogram** – grupiranje podataka kroz vrijeme
+   - **Top values** – prikaz najčešćih vrijednosti određenog polja
+   - **Filters** – ručno definirane kategorije
+13. Odabire se polje prema kojem se podaci dijele (npr. `rule.name`, `severity`, `network.transport`).
+
+Primjer:
+- Slice: `Top values`
+- Field: `rule.name`  
+→ prikazuje najčešća pravila koja generiraju alerte
+
+
+
+14. U istom panelu moguće je dodatno:
+   - prilagoditi nazive osi i legendu
+   - promijeniti boje prikaza
+   - postaviti vremensku agregaciju (npr. po minuti ili satu)
+   - dodati filtere nad podacima
+
+    - Sve promjene se u realnom vremenu prikazuju u središnjem dijelu ekrana.
+
+
+15. Nakon što je vizualizacija konfigurirana, odabire se opcija **Save and return**.
+16. Vizualizacija se sprema te se automatski dodaje na dashboard kao novi panel.
+
+
+17. Kako bi se dashboard u potpunosti popunio, postupak se ponavlja:
+   - ponovno se odabire **Add panel / Create visualization**
+   - kreira se nova vizualizacija prema istom postupku
+18. Na ovaj način dashboard se postupno popunjava različitim grafovima i metrikama (trendovi, distribucije, top vrijednosti).
+
+19. Po završetku dodavanja svih potrebnih vizualizacija, dashboard se sprema te postaje dostupan za daljnje korištenje i nadzor.
+
+
+20. U gornjem desnom dijelu Kibana sučelja nalazi se **Time filter**.
+21. Klikom na vremenski filter otvara se izbornik za odabir vremenskog raspona.
+
+Moguće je odabrati:
+- unaprijed definirane vremenske raspone (npr. *Last 15 minutes*, *Last 1 hour*, *Last 24 hours*)
+- relativni vremenski raspon (npr. zadnja 2 sata, zadnjih 7 dana)
+- apsolutni vremenski raspon (*Absolute time*), gdje se ručno unosi točno vrijeme početka i završetka analize
+
+22. Nakon odabira vremenskog raspona, svi grafovi i metrike na dashboardu automatski se osvježavaju te prikazuju podatke isključivo za odabrano razdoblje.
+
+Važno je napomenuti da je **postupak izrade svih dashboarda u Kibani identičan**, neovisno o vrsti dashboarda ili svrsi analize. Razlika između pojedinih dashboarda očituje se u:
+- odabiru različitih izvora podataka (data view)
+- korištenju različitih polja u Metric i Slice / Dimensions dijelu
+- vrsti vizualizacija i podacima koji se na njima prikazuju
+
+Zbog toga se postupak izrade dashboarda u ovom radu detaljno opisuje samo jednom, ali će pristup kreiran dashbordima biti dostupan kroz NDJESON datoteke koje će biti dostupne u nastavku.
+
+## 6.2. Dashboard – Security Overview
+![Dashboard – Security Overview](../results/screenshots/korištenje%20ELK%20stacka%20i%20izrada%20alert%20sustava/dashbord%20-%20security%20overwiew.png)
+
+Dashboard **Security Overview** izrađen je s ciljem pružanja centraliziranog i preglednog uvida u **trenutno sigurnosno stanje sustava** u gotovo realnom vremenu. Njegova primarna uloga je omogućiti brz nadzor sigurnosnih događaja bez potrebe za ručnim pregledom pojedinačnih log zapisa.
+
+Na ovom dashboardu vizualno su prikazani ključni sigurnosni pokazatelji, uključujući:
+- ukupan broj sigurnosnih događaja i njihovo kretanje kroz vrijeme, čime se omogućuje uočavanje naglih porasta aktivnosti koji mogu ukazivati na mrežno skeniranje ili napade
+- distribucija generiranih alerta prema razini ozbiljnosti (Severity), što omogućuje brzo razlikovanje između manje značajnih događaja i ozbiljnih sigurnosnih prijetnji
+- pregled sigurnosnih događaja prema tipu izvora (network, host, IAM), čime se dobiva uvid u to na kojem se sloju sustava pojavljuju problemi
+- zastupljenost mrežnih protokola (TCP, UDP, ICMP), pri čemu odstupanja od uobičajenog obrasca mogu ukazivati na sumnjive aktivnosti
+- pravila koja najčešće generiraju sigurnosne alerte, što pomaže u identifikaciji dominantnih vrsta prijetnji
+
+Korištenjem vremenskog filtra moguće je analizirati sigurnosne događaje u određenom razdoblju (npr. zadnjih sat vremena ili tijekom konkretnog incidenta), pri čemu se svi grafovi na dashboardu automatski prilagođavaju odabranom vremenskom rasponu.
+
+Dashboard **Security Overview** omogućuje:
+- brz uvid u trenutno opterećenje sigurnosnog sustava
+- identifikaciju dominantnih vrsta prijetnji
+- praćenje općih trendova sigurnosnih događaja kroz vrijeme
+
+Radi ponovljivosti i lakše implementacije, exportana konfiguracija ovog dashboarda dostupna je u obliku **NDJSON** datoteke na sljedećoj poveznici:  [NDJSON-Dashboard – Security Overview](../implementation/src/Dashbord%20-%20security%20overview.ndjson)
+
+NDJSON datoteke sadrže kompletnu konfiguraciju dashboarda te ih je moguće:
+- pregledati radi analize postavki
+- ponovno uvesti u Kibanu putem opcije *Stack Management/Kibana: Saved Objects/Import*
+- koristiti za ponovnu implementaciju dashboarda
+
+
+## 6.3. Dashboard – Network Scanning & Attack Analysis
+![Dashboard – Network Scanning & Attack Analysis](../results/screenshots/korištenje%20ELK%20stacka%20i%20izrada%20alert%20sustava/dashbord%20-%20Network%20Scanning%20&%20Attack%20Analysis%20.png)
+
+Dashboard **Network Scanning & Attack Analysis** fokusiran je na **detaljnu tehničku analizu mrežnog prometa i potencijalnih napadačkih aktivnosti**. Namijenjen je dubljem istraživanju sigurnosnih incidenata nakon što je sumnjiva aktivnost uočena na preglednom dashboardu.
+
+Na ovom dashboardu prikazani su:
+- vremenski prikaz broja generiranih sigurnosnih alerta, koji omogućuje precizno određivanje trenutka kada je došlo do incidenta
+- najčešće aktivirana sigurnosna pravila (rule name), čime se identificira vrsta napada ili sumnjive aktivnosti
+- analiza mrežnih protokola povezanih s alertima, što pomaže u razumijevanju na kojim servisima se pojavljuju problemi
+- pregled kategorija sigurnosnih pravila, poput brute force napada, web napada ili pokušaja curenja informacija
+- mapiranje detektiranih aktivnosti prema **MITRE ATT&CK** taktikama, čime se napadi smještaju u odgovarajuću fazu napadačkog ciklusa
+
+Posebna vrijednost ovog dashboarda je mogućnost kombiniranja vremenskog filtra s analizom portova, protokola i pravila, što omogućuje prepoznavanje obrazaca poput:
+- skeniranja velikog broja portova u kratkom vremenu
+- ponavljanih pokušaja autentikacije (brute force)
+- napada usmjerenih na specifične servise
+
+Dashboard **Network Scanning & Attack Analysis** omogućuje:
+- prepoznavanje mrežnog skeniranja i izviđanja
+- analizu napadačkih obrazaca i njihovog intenziteta
+- uvid u fazu napada u kojoj se potencijalni napadač nalazi
+
+Zbog svoje detaljnosti, ovaj dashboard predstavlja ključni alat u **incident response** procesu.
+
+Radi ponovljivosti i lakše implementacije, exportana konfiguracija ovog dashboarda dostupna je u obliku **NDJSON** datoteke na sljedećoj poveznici:  [NDJSON-Dashboard – Network Scanning & Attack Analysis](../implementation/src/Dashbord%20-%20Network%20Scanning%20&%20Attack%20Analysis%20.ndjson)
+
+NDJSON datoteke sadrže kompletnu konfiguraciju dashboarda te ih je moguće:
+- pregledati radi analize postavki
+- ponovno uvesti u Kibanu putem opcije *Stack Management/Kibana: Saved Objects/Import*
+- koristiti za ponovnu implementaciju dashboarda
+## 6.4. Uloga dashboarda u sigurnosnom nadzoru
+
+Korištenjem prilagođenih dashboarda osigurana je:
+- centralizirana vizualizacija sigurnosnih podataka
+- brza identifikacija anomalija i prijetnji
+- lakša korelacija sigurnosnih događaja i alerta
+- podrška kontinuiranom nadzoru sustava
+
+Dashboardi u kombinaciji s definiranim **alert pravilima** čine temelj učinkovitog sigurnosnog nadzora unutar ELK stacka.
+
+
+
+
+## 7. Izrada alert sustava
+
+Kako bi se osigurala  detekcija sumnjivih i potencijalno zlonamjernih aktivnosti u sustavu, potrebno je uspostaviti alert sustav unutar alata Elastic pod karticom Security. Alert sustav temelji se na detection rules pravilima, koja definiraju uvjete pod kojima će se određeni događaji prepoznati kao sigurnosni incidenti. Kada su uvjeti pravila zadovoljeni, Elastic Security automatski generira sigurnosni alert koji se prikazuje u sučelju za nadzor.
+
+U nastavku su opisana dva primjera pravila korištena za izradu alert sustava:
+- pravilo za detekciju **Nmap OS detection (mrežno izviđanje)**  
+- pravilo za detekciju **mogućeg brute force napada na MySQL servis**
+
+### 7.1. RULE – Nmap OS Detection Scan Detected
+
+![RULE – Nmap OS Detection Scan Detected](../results/screenshots/korištenje%20ELK%20stacka%20i%20izrada%20alert%20sustava/RULES-Nmap%20OS%20Detection%20Scan%20Detected.png)
+
+
+1. Na Monitoring VM-u potrebno je otvoriti **Elastic Security** te u izborniku odabrati **Rules**, te je potrebno odabrati **Create new rule**.
+2. Kao **Rule type** odabire se **Custom Query**., te se u pravilo uključeni sljedeći **index patterns**:
+
+    - `packetbeat-*`
+    - `filebeat-*`
+    - `winlogbeat-*`
+    - `auditbeat-*`
+    - `logs-*`
+    - `apm-*`
+    - `traces-apm-*`
+    - `endgame-*`
+    - `*elastic-cloud-logs*`
+
+
+3. Nakon toga potrebno je definirati filter. Postavlja se sljedeći **KQL upit**:
+    ```text
+    event.module:suricata AND rule.name:"ET SCAN NMAP OS Detection Probe"
+    ```
+
+    #### Objašnjenje uvjeta
+
+    - `event.module:suricata`
+         → filtriraju se isključivo događaji koje generira Suricata IDS
+
+    - `rule.name:"ET SCAN NMAP OS Detection Probe"` 
+        → cilja se specifična Emerging Threats signatura za Nmap OS detection (OS fingerprinting)
+
+    Nakon toga je potrebno odabrati Continue.
+
+4. Potom je potrebno unijeti naziv i opis pravila
+
+    - **Rule name:**  Nmap OS Detection Scan Detected
+
+    - **Description:**  Pravilo detektira pokušaje Nmap OS fingerprintinga putem Suricata IDS alerta, što upućuje na mrežno izviđanje.
+
+    Nakon toga je potrebno odabrati Continue.
+
+5. Sada je potrebno unijeti Severity i Risk Score
+
+    - **Severity:** Medium  
+    - **Risk score:** 50
+
+    **Procjena rizika**
+
+    - Aktivnost nije bezazlena
+    - Ne predstavlja direktnu kompromitaciju
+    - Ozbiljnost je ispravno klasificirana kao srednja
+
+
+
+6. Maksimalan broj alerta po izvršavanju
+
+    - **Max alerts per run:** 100
+
+    **Razlog:**
+
+    - Nmap OS detection može generirati više alerta u kratkom vremenu
+    - Ograničenje sprječava zagušenje rule enginea
+
+7. Potom se dodijeljuju tagovi, u ovom slučaju dodjeljeni su:
+
+    - `nmap`
+    - `reconnaissance`
+    - `port_scan`
+    - `ids`
+
+    Nakon toga je potrebno odabrati **Continue**.
+
+
+8. Raspored izvršavanja
+
+    - **Runs every:** 1 minuta  
+    - **Additional look-back time:** 1 minuta
+
+    **Implikacija:**
+    - Pravilo se izvršava gotovo u realnom vremenu
+    - Dodatni look-back sprječava gubitak događaja zbog kašnjenja ingestije
+
+
+
+9. Na završnom koraku odabire se opcija **Create & enable rule**, čime se pravilo istovremeno kreira i aktivira. Nakon uspješnog kreiranja, pravilo mora biti u stanju **Enabled**, što omogućuje njegovo periodično izvršavanje prema definiranoj raspodjeli.
+
+    >Aktivirano pravilo kontinuirano nadzire dolazne >događaje te, u slučaju ispunjavanja definiranih uvjeta, >automatski generira sigurnosne alerte koji se prikazuju >u **Elastic Security → Alerts** sučelju.
+
+    Radi ponovljivosti i lakše implementacije, exportana konfiguracija ovog **detection pravila** dostupna je u obliku **NDJSON** datoteke na sljedećoj poveznici: [NDJSON-RULE – Nmap OS Detection Scan Detected](../implementation/src/Rules%20-Nmap%20OS%20Detection%20Scan%20Detected.ndjson)
+
+
+
+    Exportane ruleove moguće je:
+    - pregledati radi analize konfiguracije i logike detekcije
+    - ponovno uvesti u Kibanu putem opcije *Stack Management/Kibana/Saved Objects/Import*
+    - koristiti za brzu ponovnu implementaciju pravila u drugom Elastic okruženju
+
+    Na ovaj način osigurana je ponovljivost rješenja, konzistentnost detekcijskih pravila te jednostavna migracija sigurnosne konfiguracije između različitih sustava.
+
+
+###  7.2. RULE – Possible MySQL Brute Force Attack
+
+![RULE – Possible MySQL Brute Force Attack](../results/screenshots/korištenje%20ELK%20stacka%20i%20izrada%20alert%20sustava/RULES-Possible%20MySQL%20Brute%20Force%20Attack.png)
+
+1. Na Monitoring VM-u potrebno je otvoriti **Elastic Security** te u izborniku odabrati **Rules** i potom odabrati opciju **Create new rule**.
+
+
+2. Potom je kao **Rule type** potrebno odabrati **Custom Query**.
+
+    U pravilo se uključuju sljedeći **index patterns**:
+
+    - `packetbeat-*`
+    - `filebeat-*`
+    - `winlogbeat-*`
+    - `auditbeat-*`
+    - `logs-*`
+    - `apm-*`
+    - `traces-apm-*`
+    - `endgame-*`
+    - `*elastic-cloud-logs*`
+
+
+    Suricata alerti i mrežni eventi vezani uz MySQL promet najčešće se nalaze u **Filebeat** i **Packetbeat** indeksima, dok dodatni indeksi služe kao sigurnosna rezerva.
+
+
+3. Zatim je potrebno kreirati  filter, te se on postavlja sljedećim  KQL upitom:
+    ```text
+    event.module:suricata AND destination.port:3306
+    ```
+
+    Objašnjenje uvjeta:
+
+    - `event.module:suricata`
+        → filtriraju se isključivo događaji koje generira Suricata IDS
+
+    - `destination.port:3306`
+        → cilja se MySQL servis, koji standardno koristi TCP port 3306
+
+    Ovim uvjetom se detektira velik broj pokušaja povezivanja prema MySQL servisu u kratkom vremenskom razdoblju, što može upućivati na brute force napad.
+
+    Nakon unosa upita odabire se **Continue**.
+
+
+
+4. Pravilu je potrebno dodati ime i opis u ovo slučju dodani su:
+
+    - **Rule name:**  Possible MySQL Brute Force Attack
+
+    - **Description:**  Pravilo detektira velik broj pokušaja povezivanja na MySQL servis (port 3306) u kratkom vremenskom intervalu, što može upućivati na brute force napad.
+
+    Nakon unosa naziva i opisa odabire se **Continue**.
+
+
+5. Nakon toga potrebno je dodati Severity i Risk Score
+
+    - **Severity:** High  
+    - **Risk score:** 70
+
+    **Procjena rizika:**
+
+    - Postoji realna mogućnost kompromitacije vjerodajnica
+    - Aktivnost predstavlja ozbiljnu sigurnosnu prijetnju
+
+
+
+6. Maksimalan broj alerta po izvršavanju
+
+    - **Max alerts per run:** 100
+
+     >Razlog: Brute force napadi mogu generirati velik broj događaja u vrlo kratkom vremenu.  Ograničenje sprječava preopterećenje rule enginea i alert sustava.
+
+
+7. Potom je potrebno dodijeliti tagove. Dodijeljeni tagovi u ovom slučaju su: 
+
+    - `brute_force`
+    - `mysql`
+    - `database`
+    - `intrusion`
+
+    Nakon dodavanja tagova odabire se **Continue**.
+
+
+8. Raspored izvršavanja
+
+    - **Runs every:** 1 minuta  
+    - **Additional look-back time:** 1 minuta
+
+    >Pravilo se izvršava gotovo u realnom vremenu, a dodatni look-back osigurava da se ne propuste eventi zbog kašnjenja u ingestiji logova
+
+
+
+9. Na završnom koraku odabire se opcija **Create & enable rule**, čime se pravilo istovremeno kreira i aktivira. Nakon uspješnog kreiranja, pravilo mora biti u stanju **Enabled**, što omogućuje njegovo periodično izvršavanje prema definiranoj raspodjeli.
+
+    >Aktivirano pravilo kontinuirano nadzire dolazne >događaje te, u slučaju ispunjavanja definiranih uvjeta, >automatski generira sigurnosne alerte koji se prikazuju >u **Elastic Security → Alerts** sučelju.
+
+    Radi ponovljivosti i lakše implementacije, exportana konfiguracija ovog **detection pravila** dostupna je u obliku **NDJSON** datoteke na sljedećoj poveznici: [NDJSON-RULE Possible MySQL Brute Force Attack](../implementation/src/Dashbord%20-%20Network%20Scanning%20&%20Attack%20Analysis%20.ndjson)
+
+
+
+    Exportane ruleove moguće je:
+    - pregledati radi analize konfiguracije i logike detekcije
+    - ponovno uvesti u Kibanu putem opcije *Stack Management/Kibana/Saved Objects/Import*
+    - koristiti za brzu ponovnu implementaciju pravila u drugom Elastic okruženju
+
+    Na ovaj način osigurana je ponovljivost rješenja, konzistentnost detekcijskih pravila te jednostavna migracija sigurnosne konfiguracije između različitih sustava.
+
+###  7.3. Generiranje sigurnosnih alerta u Elastic Security
+![alert](../results/screenshots/korištenje%20ELK%20stacka%20i%20izrada%20alert%20sustava/alerts.png)
+
+Kada se u sustavu dogodi sumnjiva ili potencijalno zlonamjerna aktivnost, **Elastic Security detection rules** automatski analiziraju prikupljene logove i mrežne događaje. Ako definirani uvjeti pravila budu zadovoljeni, sustav generira **security alert**.
+
+Generirani alerti se automatski prikazuju u **Elastic Security → Alerts** sučelju, gdje su dostupni za daljnju analizu i obradu.
+
+Svaki alert sadrži ključne informacije, uključujući:
+- naziv pravila koje je aktivirano
+- razinu ozbiljnosti (Severity)
+- procijenjeni rizik (Risk score)
+- vrijeme detekcije
+- relevantne mrežne ili sustavske atribute
+
+Alerti su grupirani i filtrirani prema:
+- razini ozbiljnosti (High, Medium, Low)
+- nazivu pravila
+- statusu (Open, Acknowledged, Closed)
+- pogođenom hostu ili korisniku
+
+Na ovaj način se osigurava vidljivost sigurnosnih incidenata, te se osigurava pravovremena identifikacija prijetnji te pravovremena reakcija na detektirane sumnjive aktivnosti.
