@@ -289,7 +289,7 @@ Za početak je potrebno na strojevima koji predstavljaju obične korisnike insta
 
 1. U virtualboxu u stroju Client 1 VM i Client 2 VM uključiti NAT mrežni adapter.
 
-![Uključivanje NAT mrežnog adaptera](../results/screenshots/generiranje%20prometa/Ukljucivanje%20NAT%20adaptera%20za%20Client%201%20i%202%20VM.png)
+![Uključivanje NAT mrežnog adaptera](../results/screenshots/generiranje%20prometa/provjera%20verzije%20alata/Ukljucivanje%20NAT%20adaptera%20za%20Client%201%20i%202%20VM.png)
 
 1. Upaliti strojeve i u terminalu provjeriti jesu li instalirani mysql i iperf3.
 
@@ -297,7 +297,7 @@ Za početak je potrebno na strojevima koji predstavljaju obične korisnike insta
 mysql --version
 iperf3 --version
 ```
-![Alati iperf3 i mysql nisu instalirani](../results/screenshots/generiranje%20prometa/mysql%20iperf3%20--version%20ne%20instalirani.png)
+![Alati iperf3 i mysql nisu instalirani](../results/screenshots/generiranje%20prometa/provjera%20verzije%20alata/mysql%20iperf3%20--version%20ne%20instalirani.png)
 
 Ukoliko se ne ispišu podaci o verzijama, potrebno je instalirati oba alata naredbama:
 
@@ -306,7 +306,7 @@ sudo apt install -y mysql-client
 sudo apt install -y iperf3
 ```
 
-![Alati iperf3 i mysql instalirani](../results/screenshots/generiranje%20prometa/mysql%20iperf3%20--version%20instalirani.png)
+![Alati iperf3 i mysql instalirani](../results/screenshots/generiranje%20prometa/provjera%20verzije%20alata/mysql%20iperf3%20--version%20instalirani.png)
 
 Još jednom s `mysql --version` i `iperf3 --version` provjeriti da li je instalacija uspješna.
 
@@ -379,8 +379,8 @@ sudo systemctl status mysql
 ```
 
 - unesti lozinku „admin“, naredbom se provjerava da li je server pokrenut ili zaustavljen, postoje li greške i sl.
+![Rezultat naredbe sudo systemctl status mysql](../results/screenshots/generiranje%20prometa/normalan%20promet/sudo%20systemctl%20status%20mysql.png)
 
-![Rezultat naredbe sudo systemctl status mysql](../results/screenshots/generiranje%20prometa/sudo%20systemctl%20status%20mysql.png)
 #### VM 1
 
 ```bash
@@ -434,7 +434,8 @@ which nikto
 ```
 
 Ukoliko su alati instalirani, rezultat naredbi bi trebao biti jednak rezultatu sa sljedeće slike:
-![Alati hydra, msfconsole, nikto instalirani](../results/screenshots/generiranje%20prometa/which%20hydra%20msfconsole%20nikto.png)
+
+![Alati hydra, msfconsole, nikto instalirani](../results/screenshots/generiranje%20prometa/provjera%20verzije%20alata/which%20hydra%20msfconsole%20nikto.png)
 
 Ukoliko alati nisu predinstalirani (što nebi trebao biti slučaj osim ako ih korisnik nije sam ručno deinstalirao) potrebno ih je instalirati:
 ```bash
